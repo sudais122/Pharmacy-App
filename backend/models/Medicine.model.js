@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const medicineSchema = new mongoose.Schema(
@@ -10,14 +11,14 @@ const medicineSchema = new mongoose.Schema(
 
     genericName: {
       type: String,
+      required: true,
       trim: true,
-      default: "",
     },
 
     manufacturer: {
       type: String,
+      required: true,
       trim: true,
-      default: "",
     },
 
     purchasePrice: {
@@ -43,7 +44,7 @@ const medicineSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
-      default: 0,
+      default: 10,
     },
 
     category: {
