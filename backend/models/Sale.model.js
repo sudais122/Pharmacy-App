@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const saleItemSchema = new mongoose.Schema(
@@ -20,7 +21,13 @@ const saleItemSchema = new mongoose.Schema(
       min: 1,
     },
 
-    price: {
+    purchasePrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    sellingPrice: {
       type: Number,
       required: true,
       min: 0,
@@ -33,7 +40,7 @@ const saleItemSchema = new mongoose.Schema(
     },
   },
 
-  { _id: false },
+  { _id: false }
 );
 
 const saleSchema = new mongoose.Schema(
@@ -106,9 +113,9 @@ const saleSchema = new mongoose.Schema(
 
   {
     timestamps: true,
-  },
+  }
 );
 
 const Sale = mongoose.model("Sale", saleSchema);
 
-export default Sale;
+export default Sale

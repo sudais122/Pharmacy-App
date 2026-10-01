@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 import Sale from "../models/Sale.model.js";
-import Medicine from "../models/Medicine.model.js"
-import Counter from "../models/counter.model.js"
+import Medicine from "../models/Medicine.model.js";
+import Counter from "../models/counter.model.js";
 
 const generateInvoiceNumber = async (session) => {
   const year = new Date().getFullYear();
@@ -19,8 +19,6 @@ const generateInvoiceNumber = async (session) => {
 
   return `INV-${year}-${String(counter.sequence).padStart(4, "0")}`;
 };
-
-
 
 export const createSale = async (req, res) => {
   const session = await mongoose.startSession();
@@ -59,20 +57,14 @@ export const createSale = async (req, res) => {
     const parsedHostelNumber = Number(hostelNumber);
     const parsedDiscount = Number(discount);
 
-    if (
-      !Number.isInteger(parsedHostelNumber) ||
-      parsedHostelNumber < 1
-    ) {
+    if (!Number.isInteger(parsedHostelNumber) || parsedHostelNumber < 1) {
       return res.status(400).json({
         success: false,
         message: "Invalid hostel number",
       });
     }
 
-    if (
-      !Number.isFinite(parsedDiscount) ||
-      parsedDiscount < 0
-    ) {
+    if (!Number.isFinite(parsedDiscount) || parsedDiscount < 0) {
       return res.status(400).json({
         success: false,
         message: "Discount must be a valid non-negative number",
@@ -99,10 +91,7 @@ export const createSale = async (req, res) => {
         });
       }
 
-      if (
-        !Number.isInteger(item.quantity) ||
-        item.quantity <= 0
-      ) {
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
         return res.status(400).json({
           success: false,
           message: "Quantity must be a positive whole number",
@@ -114,18 +103,12 @@ export const createSale = async (req, res) => {
     // Prevent duplicate medicines
     // -----------------------------
 
-    const medicineIdStrings = normalizedItems.map(
-      (item) => item.medicineId
-    );
+    const medicineIdStrings = normalizedItems.map((item) => item.medicineId);
 
-    if (
-      new Set(medicineIdStrings).size !==
-      medicineIdStrings.length
-    ) {
+    if (new Set(medicineIdStrings).size !== medicineIdStrings.length) {
       return res.status(400).json({
         success: false,
-        message:
-          "The same medicine cannot be added multiple times to one sale",
+        message: "The same medicine cannot be added multiple times to one sale",
       });
     }
 
@@ -141,25 +124,18 @@ export const createSale = async (req, res) => {
       }).session(session);
 
       const medicineMap = new Map(
-        medicines.map((medicine) => [
-          medicine._id.toString(),
-          medicine,
-        ])
+        medicines.map((medicine) => [medicine._id.toString(), medicine]),
       );
 
       for (const item of normalizedItems) {
         const medicine = medicineMap.get(item.medicineId);
 
         if (!medicine) {
-          throw new Error(
-            `Medicine not found: ${item.medicineId}`
-          );
+          throw new Error(`Medicine not found: ${item.medicineId}`);
         }
 
         if (!medicine.isActive) {
-          throw new Error(
-            `Medicine is inactive: ${medicine.name}`
-          );
+          throw new Error(`Medicine is inactive: ${medicine.name}`);
         }
       }
 
@@ -175,18 +151,21 @@ export const createSale = async (req, res) => {
 
         if (medicine.stock < item.quantity) {
           throw new Error(
-            `Insufficient stock for ${medicine.name}. Available stock: ${medicine.stock}`
+            `Insufficient stock for ${medicine.name}. Available stock: ${medicine.stock}`,
           );
         }
 
-        const price = Number(medicine.sellingPrice);
-        const itemTotal = price * item.quantity;
+        const purchasePrice = Number(medicine.purchasePrice);
+        const sellingPrice = Number(medicine.sellingPrice);
+
+        const itemTotal = sellingPrice * item.quantity;
 
         saleItems.push({
           medicineId: medicine._id,
           medicineName: medicine.name,
           quantity: item.quantity,
-          price,
+          purchasePrice,
+          sellingPrice,
           total: itemTotal,
         });
 
@@ -194,9 +173,7 @@ export const createSale = async (req, res) => {
       }
 
       if (parsedDiscount > subtotal) {
-        throw new Error(
-          "Discount cannot be greater than the subtotal"
-        );
+        throw new Error("Discount cannot be greater than the subtotal");
       }
 
       const total = subtotal - parsedDiscount;
@@ -205,8 +182,7 @@ export const createSale = async (req, res) => {
       // Generate invoice number
       // -----------------------------
 
-      createdInvoiceNumber =
-        await generateInvoiceNumber(session);
+      createdInvoiceNumber = await generateInvoiceNumber(session);
 
       // -----------------------------
       // Decrease stock
@@ -242,14 +218,12 @@ export const createSale = async (req, res) => {
             discount: parsedDiscount,
             total,
 
-            paymentMethod: paymentMethod
-              .trim()
-              .toLowerCase(),
+            paymentMethod: paymentMethod.trim().toLowerCase(),
           },
         ],
         {
           session,
-        }
+        },
       );
     });
 
@@ -273,8 +247,7 @@ export const createSale = async (req, res) => {
       error.message.includes("Medicine not found") ||
       error.message.includes("Medicine is inactive") ||
       error.message.includes("Insufficient stock") ||
-      error.message ===
-        "Discount cannot be greater than the subtotal"
+      error.message === "Discount cannot be greater than the subtotal"
     ) {
       return res.status(400).json({
         success: false,
@@ -285,18 +258,12 @@ export const createSale = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to create sale",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : undefined,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   } finally {
     await session.endSession();
   }
 };
-
-
-
 
 const getLatestInvoiceForResponse = async () => {
   const sale = await Sale.findOne()

@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import setuproutes from "./routes/setup.routes.js"
 import medicineroutes from "./routes/medicine.routes.js"
 import salesroutes from "./routes/sale.routes.js"
+import dashboardsummary from "./routes/dashboard.routes.js"
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use("/auth", authRoutes);
 app.use("/setup" ,setuproutes)
 app.use("/medicines",medicineroutes);
 app.use("/sales",salesroutes);
+app.use("/dashboard",dashboardsummary)
 
 export { app };
