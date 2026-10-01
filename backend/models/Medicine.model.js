@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const medicineSchema = new mongoose.Schema(
@@ -7,6 +6,7 @@ const medicineSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
     },
 
     genericName: {
@@ -60,7 +60,7 @@ const medicineSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Medicine = mongoose.model("Medicine", medicineSchema);

@@ -32,7 +32,8 @@ const saleItemSchema = new mongoose.Schema(
       min: 0,
     },
   },
-  { _id: false }
+
+  { _id: false },
 );
 
 const saleSchema = new mongoose.Schema(
@@ -41,7 +42,18 @@ const saleSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      index: true,
+    },
+
+    name: {
+      type: String,
+      required: true,
       trim: true,
+    },
+
+    date: {
+      type: Date,
+      required: true,
     },
 
     hostelNumber: {
@@ -61,7 +73,7 @@ const saleSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: (items) => items.length > 0,
-        message: "A sale must contain at least one medicine.",
+        message: "Sale must contain at least one item",
       },
     },
 
@@ -73,8 +85,9 @@ const saleSchema = new mongoose.Schema(
 
     discount: {
       type: Number,
-      default: 0,
+      required: true,
       min: 0,
+      default: 0,
     },
 
     total: {
@@ -86,18 +99,14 @@ const saleSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: [
-        "cash",
-        "easypaisa",
-        "jazzcash",
-        "bank_transfer",
-        "other",
-      ],
+      trim: true,
+      lowercase: true,
     },
   },
+
   {
     timestamps: true,
-  }
+  },
 );
 
 const Sale = mongoose.model("Sale", saleSchema);
