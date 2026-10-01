@@ -1,23 +1,28 @@
 
 import bcrypt from "bcrypt";
+
 import User from "../models/user.model.js";
-import { generateToken } from "../utils/jwt.js";
 
-const COOKIE_NAME = "token";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/jwt.js";
 
-const getCookieOptions = () => ({
+const REFRESH_COOKIE_NAME = "refreshToken";
+
+const getRefreshCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/"
+  path: "/",
 });
 
-const getClearCookieOptions = () => ({
+const getClearRefreshCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  path: "/"
+  path: "/",
 });
 
 export const login = async (req, res) => {
@@ -27,27 +32,27 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required"
+        message: "Email and password are required",
       });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await User.findOne({
-      email: normalizedEmail
+      email: normalizedEmail,
     });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Account is inactive"
+        message: "Account is inactive",
       });
     }
 
@@ -59,33 +64,45 @@ export const login = async (req, res) => {
     if (!passwordMatched) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
-    const token = generateToken(user._id.toString());
+    // Generate access token
+    const accessToken = generateAccessToken(
+      user._id.toString()
+    );
 
+    // Generate refresh token
+    const refreshToken = generateRefreshToken(
+      user._id.toString()
+    );
+
+    // Store refresh token in HTTP-only cookie
     res.cookie(
-      COOKIE_NAME,
-      token,
-      getCookieOptions()
+      REFRESH_COOKIE_NAME,
+      refreshToken,
+      getRefreshCookieOptions()
     );
 
     return res.status(200).json({
       success: true,
       message: "Login successful",
+
+      accessToken,
+
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Server error during login"
+      message: "Server error during login",
     });
   }
 };
@@ -97,15 +114,15 @@ export const getCurrentUser = async (req, res) => {
       user: {
         id: req.user._id,
         name: req.user.name,
-        email: req.user.email
-      }
+        email: req.user.email,
+      },
     });
   } catch (error) {
     console.error("Get current user error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to get current user"
+      message: "Failed to get current user",
     });
   }
 };
@@ -113,234 +130,220 @@ export const getCurrentUser = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     res.clearCookie(
-      COOKIE_NAME,
-      getClearCookieOptions()
+      REFRESH_COOKIE_NAME,
+      getClearRefreshCookieOptions()
     );
 
     return res.status(200).json({
       success: true,
-      message: "Logout successful"
+      message: "Logout successful",
     });
   } catch (error) {
     console.error("Logout error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to logout"
+      message: "Failed to logout",
     });
   }
 };
 
-export const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
+// export const forgotPassword = async (req, res) => {
+//   try {
+//     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required"
-      });
-    }
+//     if (!email) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email is required",
+//       });
+//     }
 
-    return res.status(200).json({
-      success: true,
-      message:
-        "If an account exists for this email, recovery instructions have been initiated."
-    });
-  } catch (error) {
-    console.error("Forgot password error:", error);
+//     return res.status(200).json({
+//       success: true,
+//       message:
+//         "If an account exists for this email, recovery instructions have been initiated.",
+//     });
+//   } catch (error) {
+//     console.error("Forgot password error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to process password recovery"
-    });
-  }
-};
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to process password recovery",
+//     });
+//   }
+// };
 
-export const changePassword = async (req, res) => {
-  try {
-    const {
-      currentPassword,
-      newPassword,
-      confirmPassword
-    } = req.body;
+// export const changePassword = async (req, res) => {
+//   try {
+//     const {
+//       currentPassword,
+//       newPassword,
+//       confirmPassword,
+//     } = req.body;
 
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "All password fields are required"
-      });
-    }
+//     if (!currentPassword || !newPassword || !confirmPassword) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "All password fields are required",
+//       });
+//     }
 
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "New passwords do not match"
-      });
-    }
+//     if (newPassword !== confirmPassword) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "New passwords do not match",
+//       });
+//     }
 
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be at least 8 characters"
-      });
-    }
+//     if (newPassword.length < 8) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "New password must be at least 8 characters",
+//       });
+//     }
 
-    const user = await User.findById(req.user._id);
+//     const user = await User.findById(req.user._id);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
 
-    const currentPasswordMatched = await bcrypt.compare(
-      currentPassword,
-      user.passwordHash
-    );
+//     const currentPasswordMatched = await bcrypt.compare(
+//       currentPassword,
+//       user.passwordHash
+//     );
 
-    if (!currentPasswordMatched) {
-      return res.status(401).json({
-        success: false,
-        message: "Current password is incorrect"
-      });
-    }
+//     if (!currentPasswordMatched) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Current password is incorrect",
+//       });
+//     }
 
-    const samePassword = await bcrypt.compare(
-      newPassword,
-      user.passwordHash
-    );
+//     const samePassword = await bcrypt.compare(
+//       newPassword,
+//       user.passwordHash
+//     );
 
-    if (samePassword) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "New password must be different from the current password"
-      });
-    }
+//     if (samePassword) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "New password must be different from the current password",
+//       });
+//     }
 
-    user.passwordHash = await bcrypt.hash(
-      newPassword,
-      12
-    );
+//     user.passwordHash = await bcrypt.hash(newPassword, 12);
 
-    await user.save();
+//     await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Password changed successfully"
-    });
-  } catch (error) {
-    console.error("Change password error:", error);
+//     return res.status(200).json({
+//       success: true,
+//       message: "Password changed successfully",
+//     });
+//   } catch (error) {
+//     console.error("Change password error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to change password"
-    });
-  }
-};
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to change password",
+//     });
+//   }
+// };
 
-export const changeEmail = async (req, res) => {
-  try {
-    const {
-      currentPassword,
-      newEmail
-    } = req.body;
+// export const changeEmail = async (req, res) => {
+//   try {
+//     const { currentPassword, newEmail } = req.body;
 
-    if (!currentPassword || !newEmail) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Current password and new email are required"
-      });
-    }
+//     if (!currentPassword || !newEmail) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Current password and new email are required",
+//       });
+//     }
 
-    const normalizedEmail = newEmail
-      .trim()
-      .toLowerCase();
+//     const normalizedEmail = newEmail.trim().toLowerCase();
 
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(normalizedEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email address"
-      });
-    }
+//     if (!emailRegex.test(normalizedEmail)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid email address",
+//       });
+//     }
 
-    const user = await User.findById(req.user._id);
+//     const user = await User.findById(req.user._id);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
 
-    const passwordMatched = await bcrypt.compare(
-      currentPassword,
-      user.passwordHash
-    );
+//     const passwordMatched = await bcrypt.compare(
+//       currentPassword,
+//       user.passwordHash
+//     );
 
-    if (!passwordMatched) {
-      return res.status(401).json({
-        success: false,
-        message: "Current password is incorrect"
-      });
-    }
+//     if (!passwordMatched) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Current password is incorrect",
+//       });
+//     }
 
-    if (normalizedEmail === user.email) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "New email must be different from the current email"
-      });
-    }
+//     if (normalizedEmail === user.email) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "New email must be different from the current email",
+//       });
+//     }
 
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
-      _id: { $ne: user._id }
-    });
+//     const existingUser = await User.findOne({
+//       email: normalizedEmail,
+//       _id: { $ne: user._id },
+//     });
 
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "Email is already in use"
-      });
-    }
+//     if (existingUser) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Email is already in use",
+//       });
+//     }
 
-    user.email = normalizedEmail;
+//     user.email = normalizedEmail;
 
-    await user.save();
+//     await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Email changed successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
-  } catch (error) {
-    console.error("Change email error:", error);
+//     return res.status(200).json({
+//       success: true,
+//       message: "Email changed successfully",
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Change email error:", error);
 
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Email is already in use"
-      });
-    }
+//     if (error.code === 11000) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Email is already in use",
+//       });
+//     }
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to change email"
-    });
-  }
-};
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to change email",
+//     });
+//   }
+// };

@@ -1,16 +1,39 @@
-
 import jwt from "jsonwebtoken";
 
-export const generateToken = (userId) => {
+export const generateAccessToken = (userId) => {
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET,
+    process.env.JWT_ACCESS_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d"
+      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
+    }
+    
+  );
+};
+console.log(
+  "JWT access secret loaded:",
+  !!process.env.JWT_ACCESS_SECRET
+);
+export const generateRefreshToken = (userId) => {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
     }
   );
 };
 
-export const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+export const verifyAccessToken = (token) => {
+  return jwt.verify(
+    token,
+    process.env.JWT_ACCESS_SECRET
+  );
+};
+
+export const verifyRefreshToken = (token) => {
+  return jwt.verify(
+    token,
+    process.env.JWT_REFRESH_SECRET
+  );
 };

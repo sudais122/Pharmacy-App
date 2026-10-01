@@ -1,4 +1,3 @@
-
 import express from "express";
 import { createInitialUser } from "../controllers/setup.controller.js";
 

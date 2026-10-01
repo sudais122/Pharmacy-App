@@ -5,7 +5,6 @@ import {
   login,
   getCurrentUser,
   logout,
-  forgotPassword,
   changePassword,
   changeEmail
 } from "../controllers/auth.Controller.js";
@@ -15,7 +14,7 @@ import { protect } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.post("/login", login);
-router.post("/forgot-password", forgotPassword);
+// router.post("/forgot-password", forgotPassword);
 router.post("/logout", logout);
 
 router.get("/me", protect, getCurrentUser);
