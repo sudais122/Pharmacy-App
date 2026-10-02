@@ -1,17 +1,10 @@
 import React from "react";
 
-import {
-  Plus,
-  Pill,
-  CheckCircle,
-  AlertTriangle,
-} from "lucide-react";
+import { Plus, Pill, CheckCircle, AlertTriangle, Search } from "lucide-react";
 
 import Button from "../ui/Button";
 import PageHeader from "../ui/PageHeaer";
 import Card from "../ui/Card";
-import Search from "../ui/Search";
-import DropDownmenu from "../ui/DropDownmenu";
 
 const MedicineHeader = ({
   totalMedicines = 0,
@@ -19,27 +12,8 @@ const MedicineHeader = ({
   lowStockMedicines = 0,
   searchValue = "",
   onSearchChange,
-  category = "",
-  onCategoryChange,
-  stockStatus = "",
-  onStockStatusChange,
-  onClearFilters,
+  onAddMedicine,
 }) => {
-  const categories = [
-    { value: "tablet", label: "Tablet" },
-    { value: "capsule", label: "Capsule" },
-    { value: "syrup", label: "Syrup" },
-    { value: "injection", label: "Injection" },
-  ];
-
-  const stockStatuses = [
-    { value: "in-stock", label: "In Stock" },
-    { value: "low-stock", label: "Low Stock" },
-    { value: "out-of-stock", label: "Out of Stock" },
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-  ];
-
   return (
     <div>
       {/* Header */}
@@ -49,19 +23,12 @@ const MedicineHeader = ({
           description="Manage your pharmacy medicines and inventory"
         />
 
-        <Button
-          icon={Plus}
-          text="Add Medicine"
-        />
+        <Button icon={Plus} text="Add Medicine" onClick={onAddMedicine} />
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-        <Card
-          title="Total Medicines"
-          value={totalMedicines}
-          icon={Pill}
-        />
+        <Card title="Total Medicines" value={totalMedicines} icon={Pill} />
 
         <Card
           title="Active Medicines"
@@ -78,37 +45,17 @@ const MedicineHeader = ({
         />
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex items-center justify-between gap-4 mt-6">
-        <Search
-          placeholder="Search medicines..."
+      {/* Search Bar */}
+      <div className="relative w-full max-w-md mt-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+        <input
+          type="text"
           value={searchValue}
           onChange={onSearchChange}
+          placeholder="Search medicines..."
+          className="w-full h-11 pl-10 pr-4 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
         />
-
-        <div className="flex items-center gap-3">
-          <DropDownmenu
-            placeholder="All Categories"
-            options={categories}
-            value={category}
-            onChange={onCategoryChange}
-          />
-
-          <DropDownmenu
-            placeholder="Stock Status"
-            options={stockStatuses}
-            value={stockStatus}
-            onChange={onStockStatusChange}
-          />
-
-<button
-  type="button"
-  onClick={onClearFilters}
-  className="h-11 px-4 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
->
-  Clear
-</button>
-        </div>
       </div>
     </div>
   );

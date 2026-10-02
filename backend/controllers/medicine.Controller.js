@@ -113,50 +113,20 @@ export const createMedicine = async (req, res) => {
 
 export const getMedicines = async (req, res) => {
   try {
-    const { search, category, status } = req.query;
-
-    const filter = {
-      isActive: true,
-    };
-
-    if (search?.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i");
-
-      filter.$or = [
-        { name: searchRegex },
-        { genericName: searchRegex },
-        { manufacturer: searchRegex },
-      ];
-    }
-
-    if (category?.trim()) {
-      filter.category = category.trim();
-    }
-
-    const medicines = await Medicine.find(filter).sort({ name: 1 }).lean();
-
-    const filteredMedicines = medicines
-      .map((medicine) => ({
-        ...medicine,
-        status: getStockStatus(medicine.stock, medicine.minimumStock),
-      }))
-      .filter((medicine) => {
-        if (!status) return true;
-
-        return medicine.status === status.toLowerCase();
-      });
+    const medicines = await Medicine.find()
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      count: filteredMedicines.length,
-      medicines: filteredMedicines,
+      medicines,
     });
   } catch (error) {
     console.error("Get medicines error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to get medicines",
+      message: "Failed to fetch medicines",
+      error: error.message,
     });
   }
 };
@@ -408,6 +378,37 @@ export const updateMedicineStock = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update medicine stock",
+    });
+  }
+};
+
+// Delete medicine
+export const deleteMedicine = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const medicine = await Medicine.findById(id);
+
+    if (!medicine) {
+      return res.status(404).json({
+        success: false,
+        message: "Medicine not found",
+      });
+    }
+
+    await Medicine.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Medicine deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete medicine error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete medicine",
+      error: error.message,
     });
   }
 };

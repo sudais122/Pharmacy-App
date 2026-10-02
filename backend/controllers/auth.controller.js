@@ -1,5 +1,6 @@
 
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 import User from "../models/user.model.js";
 
@@ -148,6 +149,57 @@ export const logout = async (req, res) => {
   }
 };
 
+
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token not found",
+      });
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
+
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      process.env.JWT_ACCESS_SECRET,
+      {
+        expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed successfully",
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Refresh access token error:", error);
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired refresh token. Please login again.",
+    });
+  }
+};
 // export const forgotPassword = async (req, res) => {
 //   try {
 //     const { email } = req.body;

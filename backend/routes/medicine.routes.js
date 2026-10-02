@@ -1,4 +1,3 @@
-
 import express from "express";
 
 import {
@@ -8,6 +7,7 @@ import {
   updateMedicine,
   updateMedicineStatus,
   updateMedicineStock,
+  deleteMedicine,
 } from "../controllers/medicine.Controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
@@ -25,5 +25,7 @@ router.put("/:id", protect, updateMedicine);
 router.patch("/:id/status", protect, updateMedicineStatus);
 
 router.patch("/:id/stock", protect, updateMedicineStock);
+
+router.delete("/:id", protect, deleteMedicine);
 
 export default router;

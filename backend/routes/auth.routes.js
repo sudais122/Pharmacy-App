@@ -14,5 +14,6 @@ const router = express.Router();
 router.post("/login", login);
 router.post("/logout", logout);
 router.get("/me", protect, getCurrentUser);
+router.post("/refresh-token", refreshAccessToken);
 
 export default router;

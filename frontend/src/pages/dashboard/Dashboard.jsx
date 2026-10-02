@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import DashboardOverview from "../../components/dashboard/Dashboardoverview";
 import RecentSales from "../../components/dashboard/RecentSales";
 import RecentMedicines from "../../components/dashboard/RecentMedicines";
+import AddMedicine from "../../components/medicines/AddMedicine";
+import AddSale from "../../components/sales/AddSales.jsx";
 
 import dashboard from "../../api/dashboard.js";
 
@@ -11,26 +13,27 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showAddMedicine, setShowAddMedicine] = useState(false);
+  const [showAddSale, setShowAddSale] = useState(false);
+
+  const fetchDashboard = useCallback(async (showLoader = true) => {
+    try {
+      if (showLoader) setLoading(true);
+      setError("");
+
+      const response = await dashboard();
+      setDashboardData(response.data);
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      setError(err.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await dashboard();
-
-        setDashboardData(response.data);
-      } catch (error) {
-        console.error("Dashboard fetch error:", error);
-        setError(error.message || "Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   if (loading) {
     return (
@@ -61,26 +64,40 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div>
-        <DashboardHeader />
-
-        {/* Overview Cards */}
-        <DashboardOverview
-          overall={dashboardData.overall}
+        <DashboardHeader
+          onAddMedicine={() => setShowAddMedicine(true)}
+          onAddSale={() => setShowAddSale(true)}
         />
 
-        {/* Recent Sales - Top */}
+        <DashboardOverview overall={dashboardData.overall} />
+
         <div className="mt-6">
-          <RecentSales
-            sales={dashboardData.recentSales || []}
-          />
+          <RecentSales sales={dashboardData.recentSales || []} />
         </div>
 
-        {/* Recent Medicines - Bottom */}
         <div className="mt-6">
-          <RecentMedicines
-            medicines={dashboardData.recentMedicines || []}
-          />
+          <RecentMedicines medicines={dashboardData.recentMedicines || []} />
         </div>
+
+        {showAddMedicine && (
+          <AddMedicine
+            onClose={() => setShowAddMedicine(false)}
+            onCreated={() => {
+              setShowAddMedicine(false);
+              fetchDashboard(false);
+            }}
+          />
+        )}
+
+        {showAddSale && (
+          <AddSale
+            onClose={() => setShowAddSale(false)}
+            onCreated={() => {
+              setShowAddSale(false);
+              fetchDashboard(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

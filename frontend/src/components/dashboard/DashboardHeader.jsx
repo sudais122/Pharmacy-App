@@ -1,10 +1,15 @@
+
 import React from "react";
+
 import { Plus } from "lucide-react";
 
 import Button from "../ui/Button";
 import PageHeader from "../ui/PageHeaer";
 
-const DashboardHeader = () => {
+const DashboardHeader = ({
+  onAddMedicine,
+  onAddSale,
+}) => {
   return (
     <div className="flex items-center justify-between">
       <PageHeader
@@ -13,8 +18,17 @@ const DashboardHeader = () => {
       />
 
       <div className="flex items-center gap-3">
-        <Button icon={Plus} text="Add Sale" />
-        <Button icon={Plus} text="Add Medicine" />
+        <Button
+          icon={Plus}
+          text="Add Sale"
+          onClick={onAddSale}
+        />
+
+        <Button
+          icon={Plus}
+          text="Add Medicine"
+          onClick={onAddMedicine}
+        />
       </div>
     </div>
   );
