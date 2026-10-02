@@ -7,6 +7,7 @@ import setuproutes from "./routes/setup.routes.js"
 import medicineroutes from "./routes/medicine.routes.js"
 import salesroutes from "./routes/sale.routes.js"
 import dashboardsummary from "./routes/dashboard.routes.js"
+import resportroutes from "./routes/report.routes.js"
 
 const app = express();
 
@@ -26,5 +27,6 @@ app.use("/setup" ,setuproutes)
 app.use("/medicines",medicineroutes);
 app.use("/sales",salesroutes);
 app.use("/dashboard",dashboardsummary)
+app.use("/reports",resportroutes)
 
 export { app };

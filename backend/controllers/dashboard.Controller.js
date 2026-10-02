@@ -2,24 +2,11 @@
 import Sale from "../models/Sale.model.js";
 import Medicine from "../models/Medicine.model.js";
 
-// ==========================================
 // Dashboard
-// ==========================================
-// Returns:
-// 1. Today's total sales
-// 2. Today's total revenue
-// 3. Today's total profit
-// 4. Recent 5 sales
-// 5. Recent 5 medicines
-// 6. Low-stock medicines
-// 7. Total low-stock medicine count
-// ==========================================
 
 export const getDashboard = async (req, res) => {
   try {
-    // ---------------------------------------
     // Get today's date in Pakistan timezone
-    // ---------------------------------------
 
     const pakistanDate = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Karachi",
@@ -36,9 +23,7 @@ export const getDashboard = async (req, res) => {
       `${pakistanDate}T23:59:59.999+05:00`
     );
 
-    // =======================================
     // TODAY'S SALES
-    // =======================================
 
     const todaySales = await Sale.find({
       createdAt: {
@@ -49,9 +34,7 @@ export const getDashboard = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // =======================================
     // CALCULATE TODAY'S REVENUE & PROFIT
-    // =======================================
 
     let totalRevenue = 0;
     let totalProfit = 0;
@@ -83,9 +66,7 @@ export const getDashboard = async (req, res) => {
       totalProfit += saleProfit;
     });
 
-    // =======================================
     // RECENT 5 SALES
-    // =======================================
 
     const recentSales = todaySales
       .slice(0, 5)
@@ -126,9 +107,7 @@ export const getDashboard = async (req, res) => {
         };
       });
 
-    // =======================================
     // RECENT 5 MEDICINES
-    // =======================================
 
     const recentMedicines = await Medicine.find({
       isActive: true,
@@ -140,15 +119,8 @@ export const getDashboard = async (req, res) => {
       )
       .lean();
 
-    // =======================================
     // LOW STOCK MEDICINES
-    // =======================================
-    //
-    // Includes:
-    // stock = 0
-    // stock < minimumStock
-    // stock = minimumStock
-    // =======================================
+
 
     const lowStockMedicines = await Medicine.find({
       isActive: true,
@@ -158,18 +130,11 @@ export const getDashboard = async (req, res) => {
     })
       .select("name stock minimumStock")
       .sort({ stock: 1 })
-      .lean();
-
-    // =======================================
     // TOTAL LOW STOCK MEDICINES
-    // =======================================
-
     const totalLowStockMedicines =
       lowStockMedicines.length;
 
-    // =======================================
     // FINAL RESPONSE
-    // =======================================
 
     return res.status(200).json({
       success: true,
