@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const saleItemSchema = new mongoose.Schema(
@@ -40,7 +39,7 @@ const saleItemSchema = new mongoose.Schema(
     },
   },
 
-  { _id: false }
+  { _id: false },
 );
 
 const saleSchema = new mongoose.Schema(
@@ -113,9 +112,10 @@ const saleSchema = new mongoose.Schema(
 
   {
     timestamps: true,
-  }
+  },
 );
 
-const Sale = mongoose.model("Sale", saleSchema);
+const Sale =
+  mongoose.models.Sale || mongoose.model("Sale", saleSchema);
 
-export default Sale
+export default Sale;

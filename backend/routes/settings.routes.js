@@ -5,7 +5,7 @@ import {
   getAccountInformation,
   getPharmacyInformation,
   updatePharmacyInformation,
-} from "../controllers/settings.Controller";
+} from "../controllers/settings.Controller.js";
 
 const router = express.Router();
 

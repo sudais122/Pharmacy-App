@@ -1,165 +1,167 @@
+import Sale from "../models/sale.model.js";
+import Medicine from "../models/medicine.model.js";
 
-import Sale from "../models/Sale.model.js";
-import Medicine from "../models/Medicine.model.js";
-
-// Dashboard
-
-export const getDashboard = async (req, res) => {
+const getDashboard = async (req, res) => {
   try {
-    // Get today's date in Pakistan timezone
+    // -----------------------------------
+    // Pakistan date
+    // -----------------------------------
+    const now = new Date();
 
     const pakistanDate = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Karachi",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).format(new Date());
+    }).format(now);
 
-    const startOfToday = new Date(
-      `${pakistanDate}T00:00:00+05:00`
-    );
+    // -----------------------------------
+    // Start and end of today in Pakistan
+    // -----------------------------------
+    const startOfDay = new Date(`${pakistanDate}T00:00:00+05:00`);
+    const endOfDay = new Date(`${pakistanDate}T23:59:59.999+05:00`);
 
-    const endOfToday = new Date(
-      `${pakistanDate}T23:59:59.999+05:00`
-    );
-
-    // TODAY'S SALES
-
+    // -----------------------------------
+    // Today's sales
+    // -----------------------------------
     const todaySales = await Sale.find({
       createdAt: {
-        $gte: startOfToday,
-        $lte: endOfToday,
+        $gte: startOfDay,
+        $lte: endOfDay,
       },
     })
       .sort({ createdAt: -1 })
       .lean();
 
-    // CALCULATE TODAY'S REVENUE & PROFIT
+    // -----------------------------------
+    // ALL-TIME sales
+    // Used for total revenue + total profit
+    // -----------------------------------
+    const allSales = await Sale.find({}).select("total items").lean();
 
     let totalRevenue = 0;
     let totalProfit = 0;
 
-    todaySales.forEach((sale) => {
-      const invoiceTotal = Number(sale.total) || 0;
+    allSales.forEach((sale) => {
+      // All-time revenue
+      totalRevenue += Number(sale.total) || 0;
 
-      totalRevenue += invoiceTotal;
+      // All-time profit
+      const saleProfit = (sale.items || []).reduce((sum, item) => {
+        const sellingPrice = Number(item.sellingPrice) || 0;
+        const purchasePrice = Number(item.purchasePrice) || 0;
+        const quantity = Number(item.quantity) || 0;
 
-      const saleProfit = (sale.items || []).reduce(
-        (sum, item) => {
-          const sellingPrice =
-            Number(item.sellingPrice) || 0;
-
-          const purchasePrice =
-            Number(item.purchasePrice) || 0;
-
-          const quantity =
-            Number(item.quantity) || 0;
-
-          return (
-            sum +
-            (sellingPrice - purchasePrice) * quantity
-          );
-        },
-        0
-      );
+        return sum + (sellingPrice - purchasePrice) * quantity;
+      }, 0);
 
       totalProfit += saleProfit;
     });
 
-    // RECENT 5 SALES
+    // -----------------------------------
+    // Recent 5 sales - TODAY only
+    // -----------------------------------
+    // -----------------------------------
+    // Recent 5 sales - TODAY only
+    // -----------------------------------
+    const recentSales = todaySales.slice(0, 5).map((sale) => {
+      const itemCount = (sale.items || []).reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0),
+        0,
+      );
 
-    const recentSales = todaySales
-      .slice(0, 5)
-      .map((sale) => {
-        const profit = (sale.items || []).reduce(
-          (sum, item) => {
-            const sellingPrice =
-              Number(item.sellingPrice) || 0;
+      const saleProfit = (sale.items || []).reduce((sum, item) => {
+        const sellingPrice = Number(item.sellingPrice) || 0;
+        const purchasePrice = Number(item.purchasePrice) || 0;
+        const quantity = Number(item.quantity) || 0;
 
-            const purchasePrice =
-              Number(item.purchasePrice) || 0;
+        return sum + (sellingPrice - purchasePrice) * quantity;
+      }, 0);
 
-            const quantity =
-              Number(item.quantity) || 0;
+      const time = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Karachi",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }).format(new Date(sale.createdAt));
 
-            return (
-              sum +
-              (sellingPrice - purchasePrice) *
-                quantity
-            );
-          },
-          0
-        );
+      return {
+        invoiceNumber: sale.invoiceNumber,
+        name: sale.name,
 
-        const time = new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Karachi",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }).format(new Date(sale.createdAt));
+        // Actual sale/invoice date from database
+        date: sale.date,
 
-        return {
-          invoiceNumber: sale.invoiceNumber,
-          studentName: sale.studentName,
-          time,
-          total: Number(sale.total) || 0,
-          profit,
-        };
-      });
+        // Time when sale was created
+        time,
 
-    // RECENT 5 MEDICINES
+        items: itemCount,
+        total: Number(sale.total) || 0,
+        profit: saleProfit,
+      };
+    });
 
+    // -----------------------------------
+    // Recent medicines
+    // -----------------------------------
     const recentMedicines = await Medicine.find({
       isActive: true,
     })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select(
-        "name category stock minimumStock createdAt"
-      )
+      .select("name category stock minimumStock createdAt")
       .lean();
 
-    // LOW STOCK MEDICINES
-
-
+    // -----------------------------------
+    // Low stock medicines
+    // -----------------------------------
     const lowStockMedicines = await Medicine.find({
       isActive: true,
       $expr: {
         $lte: ["$stock", "$minimumStock"],
       },
     })
-      .select("name stock minimumStock")
       .sort({ stock: 1 })
-    // TOTAL LOW STOCK MEDICINES
-    const totalLowStockMedicines =
-      lowStockMedicines.length;
+      .select("name stock minimumStock")
+      .lean();
 
-    // FINAL RESPONSE
+    // -----------------------------------
+    // Out of stock medicines
+    // -----------------------------------
+    const outOfStockMedicines = await Medicine.find({
+      isActive: true,
+      stock: 0,
+    })
+      .sort({ name: 1 })
+      .select("name stock minimumStock")
+      .lean();
 
+    // -----------------------------------
+    // Response
+    // -----------------------------------
     return res.status(200).json({
       success: true,
 
       data: {
         date: pakistanDate,
 
-        // Today's statistics
-        today: {
-          totalSales: todaySales.length,
+        // ALL-TIME
+        overall: {
           totalRevenue,
           totalProfit,
+          totalLowStockMedicines: lowStockMedicines.length,
+          totalOutOfStockMedicines: outOfStockMedicines.length,
         },
 
-        // Low stock count
-        totalLowStockMedicines,
+        // TODAY
+        today: {
+          totalSales: todaySales.length,
+        },
 
-        // Latest 5 sales
         recentSales,
-
-        // Latest 5 medicines
         recentMedicines,
-
-        // Low stock + out of stock medicines
         lowStockMedicines,
+        outOfStockMedicines,
       },
     });
   } catch (error) {
@@ -168,6 +170,9 @@ export const getDashboard = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to load dashboard",
+      error: error.message,
     });
   }
 };
+
+export { getDashboard };
