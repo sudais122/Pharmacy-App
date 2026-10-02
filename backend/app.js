@@ -8,6 +8,7 @@ import medicineroutes from "./routes/medicine.routes.js"
 import salesroutes from "./routes/sale.routes.js"
 import dashboardsummary from "./routes/dashboard.routes.js"
 import resportroutes from "./routes/report.routes.js"
+import seetingroutes from "./routes/settings.routes.js"
 
 const app = express();
 
@@ -28,5 +29,6 @@ app.use("/medicines",medicineroutes);
 app.use("/sales",salesroutes);
 app.use("/dashboard",dashboardsummary)
 app.use("/reports",resportroutes)
+app.use("/seeting",seetingroutes)
 
 export { app };
