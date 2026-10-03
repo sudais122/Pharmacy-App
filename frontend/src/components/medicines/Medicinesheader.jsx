@@ -1,14 +1,22 @@
 import React from "react";
 
-import { Plus, Pill, CheckCircle, AlertTriangle, Search } from "lucide-react";
+import {
+  Plus,
+  Pill,
+  AlertTriangle,
+  Search,
+  PackageX,
+} from "lucide-react";
 
 import Button from "../ui/Button";
+
 import PageHeader from "../ui/PageHeaer";
+
 import Card from "../ui/Card";
 
 const MedicineHeader = ({
   totalMedicines = 0,
-  activeMedicines = 0,
+  outOfStockMedicines = 0,
   lowStockMedicines = 0,
   searchValue = "",
   onSearchChange,
@@ -23,17 +31,19 @@ const MedicineHeader = ({
           description="Manage your pharmacy medicines and inventory"
         />
 
-        <Button icon={Plus} text="Add Medicine" onClick={onAddMedicine} />
+        <Button
+          icon={Plus}
+          text="Add Medicine"
+          onClick={onAddMedicine}
+        />
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-        <Card title="Total Medicines" value={totalMedicines} icon={Pill} />
-
         <Card
-          title="Active Medicines"
-          value={activeMedicines}
-          icon={CheckCircle}
+          title="Total Medicines"
+          value={totalMedicines}
+          icon={Pill}
         />
 
         <Card
@@ -42,6 +52,14 @@ const MedicineHeader = ({
           icon={AlertTriangle}
           iconBg="bg-red-100"
           iconColor="text-red-600"
+        />
+
+        <Card
+          title="Out of Stock"
+          value={outOfStockMedicines}
+          icon={PackageX}
+          iconBg="bg-orange-100"
+          iconColor="text-orange-600"
         />
       </div>
 

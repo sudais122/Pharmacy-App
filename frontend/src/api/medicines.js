@@ -10,10 +10,20 @@ const getAuthHeaders = () => {
 };
 
 // Get all medicines
+const API_URL = "http://localhost:5002/medicines";
+
+const getAccessToken = () => {
+  return localStorage.getItem("accessToken");
+};
+
 export const getMedicines = async () => {
-  const response = await fetch(`${API_BASE_URL}/medicines`, {
+  const token = getAccessToken();
+
+  const response = await fetch(API_URL, {
     method: "GET",
-    headers: getAuthHeaders(),
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     credentials: "include",
   });
 

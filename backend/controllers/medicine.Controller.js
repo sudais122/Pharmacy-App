@@ -113,12 +113,36 @@ export const createMedicine = async (req, res) => {
 
 export const getMedicines = async (req, res) => {
   try {
-    const medicines = await Medicine.find()
-      .sort({ createdAt: -1 });
+    const medicines = await Medicine.find().sort({ createdAt: -1 });
+
+    const totalMedicines = medicines.length;
+
+    // Stock is greater than 0 but at or below minimum stock
+    const totalLowStockMedicines = medicines.filter(
+      (medicine) => {
+        const stock = Number(medicine.stock || 0);
+        const minimumStock = Number(medicine.minimumStock || 0);
+
+        return stock > 0 && stock <= minimumStock;
+      }
+    ).length;
+
+    // Stock is exactly 0
+    const totalOutOfStockMedicines = medicines.filter(
+      (medicine) => Number(medicine.stock || 0) === 0
+    ).length;
+
+    const totalActiveMedicines = medicines.filter(
+      (medicine) => medicine.isActive === true
+    ).length;
 
     return res.status(200).json({
       success: true,
       medicines,
+      totalMedicines,
+      totalLowStockMedicines,
+      totalOutOfStockMedicines,
+      totalActiveMedicines,
     });
   } catch (error) {
     console.error("Get medicines error:", error);

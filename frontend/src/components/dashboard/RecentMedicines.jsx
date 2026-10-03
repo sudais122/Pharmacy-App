@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -7,7 +8,6 @@ const RecentMedicines = ({ medicines = [] }) => {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl">
-
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
         <div>
@@ -33,10 +33,8 @@ const RecentMedicines = ({ medicines = [] }) => {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-
               <th className="px-6 py-3 text-left font-semibold text-gray-600">
                 Medicine
               </th>
@@ -52,21 +50,23 @@ const RecentMedicines = ({ medicines = [] }) => {
               <th className="px-6 py-3 text-center font-semibold text-gray-600">
                 Status
               </th>
-
             </tr>
           </thead>
 
           <tbody>
             {medicines.map((medicine) => {
+              const stock = Number(medicine.stock) || 0;
+              const minimumStock = Number(medicine.minimumStock) || 0;
+
+              const isOutOfStock = stock === 0;
               const isLowStock =
-                medicine.stock <= medicine.minimumStock;
+                stock > 0 && stock <= minimumStock;
 
               return (
                 <tr
                   key={medicine._id}
                   className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
                 >
-
                   <td className="px-6 py-4">
                     <span className="font-semibold text-gray-900">
                       {medicine.name}
@@ -78,21 +78,26 @@ const RecentMedicines = ({ medicines = [] }) => {
                   </td>
 
                   <td className="px-6 py-4 text-right font-medium text-gray-900">
-                    {medicine.stock}
+                    {stock}
                   </td>
 
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        isLowStock
+                        isOutOfStock
                           ? "bg-red-100 text-red-600"
-                          : "bg-green-100 text-green-600"
+                          : isLowStock
+                            ? "bg-orange-100 text-orange-600"
+                            : "bg-green-100 text-green-600"
                       }`}
                     >
-                      {isLowStock ? "Low Stock" : "In Stock"}
+                      {isOutOfStock
+                        ? "Out of Stock"
+                        : isLowStock
+                          ? "Low Stock"
+                          : "In Stock"}
                     </span>
                   </td>
-
                 </tr>
               );
             })}
@@ -107,9 +112,7 @@ const RecentMedicines = ({ medicines = [] }) => {
                 </td>
               </tr>
             )}
-
           </tbody>
-
         </table>
       </div>
     </div>

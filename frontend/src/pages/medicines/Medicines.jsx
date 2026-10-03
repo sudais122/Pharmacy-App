@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import MedicineHeader from "../../components/medicines/Medicinesheader";
+
 import MedicineTable from "../../components/medicines/MedincinesTable";
+
 import EditMedicine from "../../components/medicines/EditMedicine";
+
 import AddMedicine from "../../components/medicines/AddMedicine";
 
-import {
-  getMedicines,
-  deleteMedicine,
-} from "../../api/medicines";
+import { getMedicines, deleteMedicine } from "../../api/medicines";
 
 const Medicine = () => {
   const [medicines, setMedicines] = useState([]);
@@ -18,6 +18,11 @@ const Medicine = () => {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
+
+  // Summary values from API
+  const [totalMedicines, setTotalMedicines] = useState(0);
+  const [totalLowStockMedicines, setTotalLowStockMedicines] = useState(0);
+  const [totalOutOfStockMedicines, setTotalOutOfStockMedicines] = useState(0);
 
   // Medicine currently being edited
   const [editingMedicine, setEditingMedicine] = useState(null);
@@ -38,31 +43,7 @@ const Medicine = () => {
 
       console.log("Medicines API response:", response);
 
-      /*
-        Supports different possible backend responses:
-
-        {
-          success: true,
-          medicines: [...]
-        }
-
-        OR
-
-        {
-          success: true,
-          data: [...]
-        }
-
-        OR
-
-        {
-          success: true,
-          data: {
-            medicines: [...]
-          }
-        }
-      */
-
+      // Medicines
       if (Array.isArray(response.medicines)) {
         setMedicines(response.medicines);
       } else if (Array.isArray(response.data)) {
@@ -72,12 +53,28 @@ const Medicine = () => {
       } else {
         setMedicines([]);
       }
+
+      // Summary values returned by API
+      setTotalMedicines(
+        Number(response.totalMedicines || 0)
+      );
+
+      setTotalLowStockMedicines(
+        Number(response.totalLowStockMedicines || 0)
+      );
+
+      setTotalOutOfStockMedicines(
+        Number(response.totalOutOfStockMedicines || 0)
+      );
     } catch (error) {
       console.error("Fetch medicines error:", error);
 
-      setError(
-        error.message || "Failed to load medicines"
-      );
+      setError(error.message || "Failed to load medicines");
+
+      setMedicines([]);
+      setTotalMedicines(0);
+      setTotalLowStockMedicines(0);
+      setTotalOutOfStockMedicines(0);
     } finally {
       setLoading(false);
     }
@@ -101,40 +98,13 @@ const Medicine = () => {
 
     return medicines.filter((medicine) => {
       return (
-        medicine.name
-          ?.toLowerCase()
-          .includes(searchText) ||
-
-        medicine.genericName
-          ?.toLowerCase()
-          .includes(searchText) ||
-
-        medicine.manufacturer
-          ?.toLowerCase()
-          .includes(searchText) ||
-
-        medicine.category
-          ?.toLowerCase()
-          .includes(searchText)
+        medicine.name?.toLowerCase().includes(searchText) ||
+        medicine.genericName?.toLowerCase().includes(searchText) ||
+        medicine.manufacturer?.toLowerCase().includes(searchText) ||
+        medicine.category?.toLowerCase().includes(searchText)
       );
     });
   }, [medicines, search]);
-
-  // --------------------------------------------------
-  // SUMMARY
-  // --------------------------------------------------
-
-  const totalMedicines = medicines.length;
-
-  const activeMedicines = medicines.filter(
-    (medicine) => medicine.isActive === true
-  ).length;
-
-  const lowStockMedicines = medicines.filter(
-    (medicine) =>
-      medicine.stock > 0 &&
-      medicine.stock <= medicine.minimumStock
-  ).length;
 
   // --------------------------------------------------
   // EDIT MEDICINE
@@ -158,6 +128,9 @@ const Medicine = () => {
     );
 
     setEditingMedicine(null);
+
+    // Refresh API summary values
+    fetchMedicines();
   };
 
   // --------------------------------------------------
@@ -176,18 +149,19 @@ const Medicine = () => {
     try {
       await deleteMedicine(medicine._id);
 
-      // Remove medicine from UI after successful API request
+      // Remove medicine from UI
       setMedicines((previousMedicines) =>
         previousMedicines.filter(
           (item) => item._id !== medicine._id
         )
       );
+
+      // Refresh totals from API
+      fetchMedicines();
     } catch (error) {
       console.error("Delete medicine error:", error);
 
-      alert(
-        error.message || "Failed to delete medicine"
-      );
+      alert(error.message || "Failed to delete medicine");
     }
   };
 
@@ -202,6 +176,9 @@ const Medicine = () => {
     ]);
 
     setShowAddMedicine(false);
+
+    // Refresh totals from API
+    fetchMedicines();
   };
 
   // --------------------------------------------------
@@ -210,20 +187,15 @@ const Medicine = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div >
-
+      <div>
         {/* Header */}
         <MedicineHeader
           totalMedicines={totalMedicines}
-          activeMedicines={activeMedicines}
-          lowStockMedicines={lowStockMedicines}
+          lowStockMedicines={totalLowStockMedicines}
+          outOfStockMedicines={totalOutOfStockMedicines}
           searchValue={search}
-          onSearchChange={(e) =>
-            setSearch(e.target.value)
-          }
-          onAddMedicine={() =>
-            setShowAddMedicine(true)
-          }
+          onSearchChange={(e) => setSearch(e.target.value)}
+          onAddMedicine={() => setShowAddMedicine(true)}
         />
 
         {/* Loading */}
@@ -245,7 +217,7 @@ const Medicine = () => {
             <button
               type="button"
               onClick={fetchMedicines}
-              className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 cursor-pointer"
+              className="mt-3 cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
             >
               Try Again
             </button>
@@ -264,9 +236,7 @@ const Medicine = () => {
         {/* Add Medicine Modal */}
         {showAddMedicine && (
           <AddMedicine
-            onClose={() =>
-              setShowAddMedicine(false)
-            }
+            onClose={() => setShowAddMedicine(false)}
             onCreated={handleMedicineCreated}
           />
         )}
@@ -275,13 +245,10 @@ const Medicine = () => {
         {editingMedicine && (
           <EditMedicine
             medicine={editingMedicine}
-            onClose={() =>
-              setEditingMedicine(null)
-            }
+            onClose={() => setEditingMedicine(null)}
             onUpdated={handleMedicineUpdated}
           />
         )}
-
       </div>
     </div>
   );

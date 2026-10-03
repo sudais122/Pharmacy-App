@@ -1,11 +1,8 @@
-import Sale from "../models/sale.model.js";
-import Medicine from "../models/medicine.model.js";
+import Sale from "../models/Sale.model.js";
+import Medicine from "../models/Medicine.model.js";
 
 const getDashboard = async (req, res) => {
   try {
-    // -----------------------------------
-    // Pakistan date
-    // -----------------------------------
     const now = new Date();
 
     const pakistanDate = new Intl.DateTimeFormat("en-CA", {
@@ -15,15 +12,14 @@ const getDashboard = async (req, res) => {
       day: "2-digit",
     }).format(now);
 
-    // -----------------------------------
-    // Start and end of today in Pakistan
-    // -----------------------------------
-    const startOfDay = new Date(`${pakistanDate}T00:00:00+05:00`);
-    const endOfDay = new Date(`${pakistanDate}T23:59:59.999+05:00`);
+    const startOfDay = new Date(
+      `${pakistanDate}T00:00:00+05:00`
+    );
 
-    // -----------------------------------
-    // Today's sales
-    // -----------------------------------
+    const endOfDay = new Date(
+      `${pakistanDate}T23:59:59.999+05:00`
+    );
+
     const todaySales = await Sale.find({
       createdAt: {
         $gte: startOfDay,
@@ -33,50 +29,58 @@ const getDashboard = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // -----------------------------------
-    // ALL-TIME sales
-    // Used for total revenue + total profit
-    // -----------------------------------
-    const allSales = await Sale.find({}).select("total items").lean();
+    const allSales = await Sale.find({})
+      .select("total items")
+      .lean();
 
     let totalRevenue = 0;
     let totalProfit = 0;
 
     allSales.forEach((sale) => {
-      // All-time revenue
       totalRevenue += Number(sale.total) || 0;
 
-      // All-time profit
-      const saleProfit = (sale.items || []).reduce((sum, item) => {
-        const sellingPrice = Number(item.sellingPrice) || 0;
-        const purchasePrice = Number(item.purchasePrice) || 0;
-        const quantity = Number(item.quantity) || 0;
+      const saleProfit = (sale.items || []).reduce(
+        (sum, item) => {
+          const sellingPrice = Number(item.sellingPrice) || 0;
+          const purchasePrice = Number(item.purchasePrice) || 0;
+          const quantity = Number(item.quantity) || 0;
 
-        return sum + (sellingPrice - purchasePrice) * quantity;
-      }, 0);
+          return (
+            sum +
+            (sellingPrice - purchasePrice) * quantity
+          );
+        },
+        0
+      );
 
       totalProfit += saleProfit;
     });
 
-    // -----------------------------------
-    // Recent 5 sales - TODAY only
-    // -----------------------------------
-    // -----------------------------------
-    // Recent 5 sales - TODAY only
-    // -----------------------------------
     const recentSales = todaySales.slice(0, 5).map((sale) => {
       const itemCount = (sale.items || []).reduce(
-        (sum, item) => sum + (Number(item.quantity) || 0),
-        0,
+        (sum, item) =>
+          sum + (Number(item.quantity) || 0),
+        0
       );
 
-      const saleProfit = (sale.items || []).reduce((sum, item) => {
-        const sellingPrice = Number(item.sellingPrice) || 0;
-        const purchasePrice = Number(item.purchasePrice) || 0;
-        const quantity = Number(item.quantity) || 0;
+      const saleProfit = (sale.items || []).reduce(
+        (sum, item) => {
+          const sellingPrice =
+            Number(item.sellingPrice) || 0;
 
-        return sum + (sellingPrice - purchasePrice) * quantity;
-      }, 0);
+          const purchasePrice =
+            Number(item.purchasePrice) || 0;
+
+          const quantity =
+            Number(item.quantity) || 0;
+
+          return (
+            sum +
+            (sellingPrice - purchasePrice) * quantity
+          );
+        },
+        0
+      );
 
       const time = new Intl.DateTimeFormat("en-US", {
         timeZone: "Asia/Karachi",
@@ -88,22 +92,14 @@ const getDashboard = async (req, res) => {
       return {
         invoiceNumber: sale.invoiceNumber,
         name: sale.name,
-
-        // Actual sale/invoice date from database
         date: sale.date,
-
-        // Time when sale was created
         time,
-
         items: itemCount,
         total: Number(sale.total) || 0,
         profit: saleProfit,
       };
     });
 
-    // -----------------------------------
-    // Recent medicines
-    // -----------------------------------
     const recentMedicines = await Medicine.find({
       isActive: true,
     })
@@ -112,11 +108,9 @@ const getDashboard = async (req, res) => {
       .select("name category stock minimumStock createdAt")
       .lean();
 
-    // -----------------------------------
-    // Low stock medicines
-    // -----------------------------------
     const lowStockMedicines = await Medicine.find({
       isActive: true,
+      stock: { $gt: 0 },
       $expr: {
         $lte: ["$stock", "$minimumStock"],
       },
@@ -125,9 +119,6 @@ const getDashboard = async (req, res) => {
       .select("name stock minimumStock")
       .lean();
 
-    // -----------------------------------
-    // Out of stock medicines
-    // -----------------------------------
     const outOfStockMedicines = await Medicine.find({
       isActive: true,
       stock: 0,
@@ -136,24 +127,20 @@ const getDashboard = async (req, res) => {
       .select("name stock minimumStock")
       .lean();
 
-    // -----------------------------------
-    // Response
-    // -----------------------------------
     return res.status(200).json({
       success: true,
-
       data: {
         date: pakistanDate,
 
-        // ALL-TIME
         overall: {
           totalRevenue,
           totalProfit,
-          totalLowStockMedicines: lowStockMedicines.length,
-          totalOutOfStockMedicines: outOfStockMedicines.length,
+          totalLowStockMedicines:
+            lowStockMedicines.length,
+          totalOutOfStockMedicines:
+            outOfStockMedicines.length,
         },
 
-        // TODAY
         today: {
           totalSales: todaySales.length,
         },

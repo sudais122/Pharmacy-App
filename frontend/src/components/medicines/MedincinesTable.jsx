@@ -61,9 +61,27 @@ const MedicineTable = ({
               const isSelected =
                 selectedMedicine?._id === medicine._id;
 
+              const stock = Number(medicine.stock || 0);
+              const minimumStock = Number(
+                medicine.minimumStock || 0
+              );
+
+              const stockStatus =
+                stock === 0
+                  ? "Out of Stock"
+                  : stock <= minimumStock
+                  ? "Low Stock"
+                  : "In Stock";
+
+              const stockStatusClass =
+                stock === 0
+                  ? "bg-red-100 text-red-600"
+                  : stock <= minimumStock
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-green-100 text-green-600";
+
               return (
                 <React.Fragment key={medicine._id}>
-                  {/* Main Row */}
                   <tr className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-6 py-4 font-semibold text-gray-900">
                       {medicine.name}
@@ -74,41 +92,37 @@ const MedicineTable = ({
                     </td>
 
                     <td className="px-6 py-4 text-right font-medium text-gray-900">
-                      {medicine.stock}
+                      {stock}
                     </td>
 
                     <td className="px-6 py-4 text-gray-500">
                       {medicine.category}
                     </td>
 
-                    {/* Actions */}
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-3">
-                        {/* Edit */}
                         <button
                           type="button"
                           onClick={() => onEdit?.(medicine)}
-                          className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
+                          className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="h-4 w-4" />
                           Edit
                         </button>
 
-                        {/* Delete */}
                         <button
                           type="button"
                           onClick={() => onDelete?.(medicine)}
-                          className="inline-flex items-center gap-1.5 font-medium text-red-600 hover:text-red-700 cursor-pointer"
+                          className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="h-4 w-4" />
                           Delete
                         </button>
 
-                        {/* View */}
                         <button
                           type="button"
                           onClick={() => handleView(medicine)}
-                          className="font-medium text-green-600 hover:text-green-700 cursor-pointer"
+                          className="cursor-pointer font-medium text-green-600 hover:text-green-700"
                         >
                           {isSelected ? "Hide" : "View"}
                         </button>
@@ -116,7 +130,6 @@ const MedicineTable = ({
                     </td>
                   </tr>
 
-                  {/* Details Row */}
                   {isSelected && (
                     <tr className="border-b border-gray-200 bg-gray-50">
                       <td
@@ -124,7 +137,6 @@ const MedicineTable = ({
                         className="px-6 py-5"
                       >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {/* Manufacturer */}
                           <div>
                             <p className="text-xs text-gray-500">
                               Manufacturer
@@ -135,7 +147,6 @@ const MedicineTable = ({
                             </p>
                           </div>
 
-                          {/* Purchase Price */}
                           <div>
                             <p className="text-xs text-gray-500">
                               Purchase Price
@@ -149,7 +160,6 @@ const MedicineTable = ({
                             </p>
                           </div>
 
-                          {/* Selling Price */}
                           <div>
                             <p className="text-xs text-gray-500">
                               Selling Price
@@ -163,39 +173,25 @@ const MedicineTable = ({
                             </p>
                           </div>
 
-                          {/* Minimum Stock */}
                           <div>
                             <p className="text-xs text-gray-500">
                               Minimum Stock
                             </p>
 
                             <p className="mt-1 font-medium text-gray-900">
-                              {medicine.minimumStock}
+                              {minimumStock}
                             </p>
                           </div>
 
-                          {/* Stock Status */}
                           <div>
                             <p className="text-xs text-gray-500">
                               Stock Status
                             </p>
 
                             <span
-                              className={`inline-flex mt-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                                medicine.stock === 0
-                                  ? "bg-red-100 text-red-600"
-                                  : medicine.stock <=
-                                    medicine.minimumStock
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-green-100 text-green-600"
-                              }`}
+                              className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${stockStatusClass}`}
                             >
-                              {medicine.stock === 0
-                                ? "Out of Stock"
-                                : medicine.stock <=
-                                  medicine.minimumStock
-                                ? "Low Stock"
-                                : "In Stock"}
+                              {stockStatus}
                             </span>
                           </div>
                         </div>

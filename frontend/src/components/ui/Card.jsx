@@ -25,8 +25,8 @@ const Card = ({
         </div>
 
         {Icon && (
-          <div className={`p-3 rounded-lg ${iconBg}`}>
-            <Icon className={`w-6 h-6 ${iconColor}`} />
+          <div className={`p-2 rounded-lg ${iconBg}`}>
+            <Icon className={`w-5 h-5 ${iconColor}`} />
           </div>
         )}
       </div>

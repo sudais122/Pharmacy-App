@@ -1,23 +1,33 @@
+
 import React from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { ArrowRight } from "lucide-react";
+
+import PageHeader from "../ui/PageHeaer";
 
 const RecentSales = ({ sales = [] }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl">
+    <div className="rounded-xl border border-gray-200 bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-2">
+        <PageHeader
+          title="Recent Sales"
+          description="Latest sales transactions from today"
+          titleClassName="text-lg"
+          descriptionClassName="text-xs"
+        />
 
         <button
           type="button"
           onClick={() => navigate("/sales")}
-          className="flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 cursor-pointer"
+          className="flex cursor-pointer items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700"
         >
           View All
-
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
 
@@ -52,16 +62,14 @@ const RecentSales = ({ sales = [] }) => {
             {sales.map((sale) => (
               <tr
                 key={sale.invoiceNumber}
-                className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
+                className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50"
               >
-                {/* Invoice */}
                 <td className="px-6 py-4">
                   <span className="font-semibold text-gray-900">
                     {sale.invoiceNumber}
                   </span>
                 </td>
 
-                {/* Date */}
                 <td className="px-6 py-4 text-gray-500">
                   {sale.date
                     ? new Date(sale.date).toLocaleDateString("en-US", {
@@ -72,24 +80,21 @@ const RecentSales = ({ sales = [] }) => {
                     : "-"}
                 </td>
 
-                {/* Time */}
                 <td className="px-6 py-4 text-gray-500">
                   {sale.time || "-"}
                 </td>
 
-                {/* Total */}
                 <td className="px-6 py-4 text-right font-semibold text-gray-900">
                   Rs. {Number(sale.total || 0).toLocaleString()}
                 </td>
 
-                {/* Action */}
                 <td className="px-6 py-4 text-center">
                   <button
                     type="button"
                     onClick={() =>
                       navigate(`/sales/${sale.invoiceNumber}`)
                     }
-                    className="text-sm font-medium text-green-600 hover:text-green-700 cursor-pointer"
+                    className="cursor-pointer text-sm font-medium text-green-600 hover:text-green-700"
                   >
                     View Invoice
                   </button>

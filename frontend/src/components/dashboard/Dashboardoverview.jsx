@@ -1,15 +1,17 @@
 import React from "react";
+
 import {
   DollarSign,
   TrendingUp,
   AlertTriangle,
+  PackageX,
 } from "lucide-react";
 
 import Card from "../ui/Card";
 
 const DashboardOverview = ({ overall }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
       <Card
         title="Total Money"
         value={`Rs. ${Number(
@@ -33,6 +35,14 @@ const DashboardOverview = ({ overall }) => {
         icon={AlertTriangle}
         iconBg="bg-red-100"
         iconColor="text-red-600"
+      />
+
+      <Card
+        title="Out of Stock"
+        value={overall?.totalOutOfStockMedicines || 0}
+        icon={PackageX}
+        iconBg="bg-orange-100"
+        iconColor="text-orange-600"
       />
     </div>
   );
