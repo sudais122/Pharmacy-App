@@ -1,4 +1,3 @@
-
 import express from "express";
 
 import {
@@ -11,7 +10,7 @@ import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/create-sale", protect, createSale); 
+router.post("/create-sale", protect, createSale);
 
 router.get("/getallsales", protect, getSales);
 

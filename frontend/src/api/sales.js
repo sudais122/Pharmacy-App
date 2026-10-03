@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/sales";
+const API_URL = "http://localhost:5002/sales";
 
 const getAccessToken = () => {
   return localStorage.getItem("accessToken");
@@ -14,6 +14,7 @@ export const createSale = async (saleData) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
     body: JSON.stringify(saleData),
   });
 
@@ -35,6 +36,7 @@ export const getSales = async () => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -55,6 +57,7 @@ export const getSaleById = async (id) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   const data = await response.json();

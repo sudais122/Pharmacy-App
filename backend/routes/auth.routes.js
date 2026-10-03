@@ -5,6 +5,7 @@ import {
   login,
   getCurrentUser,
   logout,
+  refreshAccessToken
 } from "../controllers/auth.Controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
