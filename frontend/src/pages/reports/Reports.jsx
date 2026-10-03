@@ -1,145 +1,98 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React from "react";
 
-import { Reportheader } from "../../components/Reports/ReportHeader";
+import {
+  Banknote,
+  ShoppingCart,
+  TrendingUp,
+  Pill,
+} from "lucide-react";
+
+import Reportheader from "../../components/reports/Reportheader";
+import SalesTrend from "../../components/Reports/SalesTrend";
+import PaymentBreakdown from "../../components/Reports/PaymentBreakdown";
+import TopMedicines from "../../components/Reports/TopMedicines";
+import HostelSales from "../../components/Reports/HostelSales";
 import Card from "../../components/ui/Card";
 
-import { getReportSummary } from "../../api/reports";
-
-const DEFAULT_SUMMARY = {
-  totalSales: 0,
-  totalOrders: 0,
-  totalProfit: 0,
-  medicinesSold: 0,
-};
-
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: "PKR",
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
-
 const Reports = () => {
-  const [period, setPeriod] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  // Dummy data for now
+  // Later this will come from getReportSummary()
+  const reportSummary = {
+    totalSales: 13856,
+    totalOrders: 5,
+    totalProfit: 4180,
+    medicinesSold: 41,
+  };
 
-  const [summary, setSummary] = useState(DEFAULT_SUMMARY);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const loadSummary = useCallback(async (isCancelled) => {
-    // Validate date range before calling the API
-    if (fromDate && toDate && fromDate > toDate) {
-      setError("'From' date cannot be later than 'To' date");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const params = {};
-      if (period && period !== "all") params.period = period;
-      if (fromDate) params.fromDate = fromDate;
-      if (toDate) params.toDate = toDate;
-
-      const response = await getReportSummary(params);
-
-      console.log(response);
-      if (isCancelled()) return; // ignore outdated responses
-
-      if (response?.success) {
-        // Merge with defaults so missing fields never break the UI
-        setSummary({ ...DEFAULT_SUMMARY, ...(response.data || {}) });
-      } else {
-        setSummary(DEFAULT_SUMMARY);
-        setError(response?.message || "Failed to load report summary");
-      }
-    } catch (err) {
-      if (isCancelled()) return;
-      console.error("Failed to load report summary:", err);
-      setSummary(DEFAULT_SUMMARY);
-      setError(err.message || "Failed to load report summary");
-    } finally {
-      if (!isCancelled()) setLoading(false);
-    }
-  }, [period, fromDate, toDate]);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadSummary(() => cancelled);
-    return () => {
-      cancelled = true;
-    };
-  }, [loadSummary]);
-
-  const cards = [
-    {
-      label: "Total Sales",
-      value: formatCurrency(summary.totalSales),
-      icon: "💰",
-      color: "bg-green-100",
-    },
-    {
-      label: "Total Orders",
-      value: summary.totalOrders,
-      icon: "🛒",
-      color: "bg-blue-100",
-    },
-    {
-      label: "Total Profit",
-      value: formatCurrency(summary.totalProfit),
-      icon: "📈",
-      color: "bg-purple-100",
-    },
-    {
-      label: "Medicines Sold",
-      value: summary.medicinesSold,
-      icon: "💊",
-      color: "bg-orange-100",
-    },
-  ];
+  const handleCardClick = (type) => {
+    console.log(`Clicked: ${type}`);
+  };
 
   return (
     <div className="space-y-6">
-      <Reportheader
-        period={period}
-        fromDate={fromDate}
-        toDate={toDate}
-        onPeriodChange={setPeriod}
-        onFromDateChange={setFromDate}
-        onToDateChange={setToDate}
-      />
+      {/* Header + Filters */}
+      <Reportheader />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <Card key={card.label}>
-            <div className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">
-                    {card.label}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-bold text-gray-900">
-                    {loading ? "..." : card.value}
-                  </h2>
-                </div>
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-lg text-xl ${card.color}`}
-                >
-                  {card.icon}
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+        <Card
+          title="Total Sales"
+          value={`PKR ${reportSummary.totalSales.toLocaleString()}`}
+          icon={Banknote}
+          iconBg="bg-green-100"
+          iconColor="text-green-600"
+          onClick={() => handleCardClick("Total Sales")}
+        />
+
+        <Card
+          title="Total Orders"
+          value={reportSummary.totalOrders.toLocaleString()}
+          icon={ShoppingCart}
+          iconBg="bg-blue-100"
+          iconColor="text-blue-600"
+          onClick={() => handleCardClick("Total Orders")}
+        />
+
+        <Card
+          title="Total Profit"
+          value={`PKR ${reportSummary.totalProfit.toLocaleString()}`}
+          icon={TrendingUp}
+          iconBg="bg-purple-100"
+          iconColor="text-purple-600"
+          onClick={() => handleCardClick("Total Profit")}
+        />
+
+        <Card
+          title="Medicines Sold"
+          value={reportSummary.medicinesSold.toLocaleString()}
+          icon={Pill}
+          iconBg="bg-orange-100"
+          iconColor="text-orange-600"
+          onClick={() => handleCardClick("Medicines Sold")}
+        />
+      </div>
+
+      {/* Sales Trend + Payment Breakdown */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Sales Trend */}
+        <div className="lg:col-span-2">
+          <SalesTrend />
+        </div>
+
+        {/* Payment Breakdown */}
+        <div>
+          <PaymentBreakdown />
+        </div>
+      </div>
+
+      {/* Top Selling Medicines */}
+      <div>
+        <TopMedicines />
+      </div>
+
+      {/* Hostel Sales */}
+      <div>
+        <HostelSales />
       </div>
     </div>
   );
