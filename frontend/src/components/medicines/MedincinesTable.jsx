@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-
 import { Edit, Trash2 } from "lucide-react";
 
 const MedicineTable = ({
   medicines = [],
+  pagination,
+  onPageChange,
   onEdit,
   onDelete,
 }) => {
@@ -11,14 +12,28 @@ const MedicineTable = ({
 
   const handleView = (medicine) => {
     setSelectedMedicine(
-      selectedMedicine?._id === medicine._id
-        ? null
-        : medicine
+      selectedMedicine?._id === medicine._id ? null : medicine
     );
   };
 
+  const currentPage = pagination?.currentPage || 1;
+  const limit = pagination?.limit || medicines.length;
+  const totalMedicines = pagination?.totalMedicines || medicines.length;
+  const totalPages = pagination?.totalPages || 1;
+
+  const start =
+    totalMedicines === 0
+      ? 0
+      : (currentPage - 1) * limit + 1;
+
+  const end = Math.min(
+    currentPage * limit,
+    totalMedicines
+  );
+
   return (
     <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -62,6 +77,7 @@ const MedicineTable = ({
                 selectedMedicine?._id === medicine._id;
 
               const stock = Number(medicine.stock || 0);
+
               const minimumStock = Number(
                 medicine.minimumStock || 0
               );
@@ -104,7 +120,7 @@ const MedicineTable = ({
                         <button
                           type="button"
                           onClick={() => onEdit?.(medicine)}
-                          className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"
+                          className="inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700"
                         >
                           <Edit className="h-4 w-4" />
                           Edit
@@ -113,7 +129,7 @@ const MedicineTable = ({
                         <button
                           type="button"
                           onClick={() => onDelete?.(medicine)}
-                          className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-red-600 hover:text-red-700"
+                          className="inline-flex items-center gap-1.5 font-medium text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete
@@ -122,7 +138,7 @@ const MedicineTable = ({
                         <button
                           type="button"
                           onClick={() => handleView(medicine)}
-                          className="cursor-pointer font-medium text-green-600 hover:text-green-700"
+                          className="font-medium text-green-600 hover:text-green-700"
                         >
                           {isSelected ? "Hide" : "View"}
                         </button>
@@ -141,9 +157,8 @@ const MedicineTable = ({
                             <p className="text-xs text-gray-500">
                               Manufacturer
                             </p>
-
                             <p className="mt-1 font-medium text-gray-900">
-                              {medicine.manufacturer}
+                              {medicine.manufacturer || "-"}
                             </p>
                           </div>
 
@@ -151,7 +166,6 @@ const MedicineTable = ({
                             <p className="text-xs text-gray-500">
                               Purchase Price
                             </p>
-
                             <p className="mt-1 font-medium text-gray-900">
                               Rs.{" "}
                               {Number(
@@ -164,7 +178,6 @@ const MedicineTable = ({
                             <p className="text-xs text-gray-500">
                               Selling Price
                             </p>
-
                             <p className="mt-1 font-medium text-gray-900">
                               Rs.{" "}
                               {Number(
@@ -177,7 +190,6 @@ const MedicineTable = ({
                             <p className="text-xs text-gray-500">
                               Minimum Stock
                             </p>
-
                             <p className="mt-1 font-medium text-gray-900">
                               {minimumStock}
                             </p>
@@ -203,6 +215,78 @@ const MedicineTable = ({
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex flex-col gap-4 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Showing X - Y of Z */}
+        <p className="text-sm text-gray-500">
+          Showing{" "}
+          <span className="font-medium text-gray-900">
+            {start}
+          </span>{" "}
+          -{" "}
+          <span className="font-medium text-gray-900">
+            {end}
+          </span>{" "}
+          of{" "}
+          <span className="font-medium text-gray-900">
+            {totalMedicines}
+          </span>{" "}
+          medicines
+        </p>
+
+        {/* Pagination Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={
+              currentPage === 1 ||
+              !onPageChange
+            }
+            onClick={() =>
+              onPageChange(currentPage - 1)
+            }
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          {/* Page Numbers */}
+          {Array.from(
+            { length: totalPages },
+            (_, index) => index + 1
+          ).map((pageNumber) => (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() =>
+                onPageChange?.(pageNumber)
+              }
+              className={`h-9 min-w-9 rounded-lg px-3 text-sm font-medium ${
+                currentPage === pageNumber
+                  ? "bg-green-600 text-white"
+                  : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {pageNumber}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            disabled={
+              currentPage === totalPages ||
+              !onPageChange
+            }
+            onClick={() =>
+              onPageChange(currentPage + 1)
+            }
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

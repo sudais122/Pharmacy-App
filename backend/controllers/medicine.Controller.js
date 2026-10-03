@@ -113,32 +113,57 @@ export const createMedicine = async (req, res) => {
 
 export const getMedicines = async (req, res) => {
   try {
-    const medicines = await Medicine.find().sort({ createdAt: -1 });
+    // Pagination
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
 
-    const totalMedicines = medicines.length;
+    const skip = (page - 1) * limit;
 
-    // Stock is greater than 0 but at or below minimum stock
-    const totalLowStockMedicines = medicines.filter(
-      (medicine) => {
-        const stock = Number(medicine.stock || 0);
-        const minimumStock = Number(medicine.minimumStock || 0);
+    // Get total count
+    const totalMedicines = await Medicine.countDocuments();
 
-        return stock > 0 && stock <= minimumStock;
-      }
-    ).length;
+    // Get paginated medicines
+    const medicines = await Medicine.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    // Stock is exactly 0
-    const totalOutOfStockMedicines = medicines.filter(
-      (medicine) => Number(medicine.stock || 0) === 0
-    ).length;
+    // Low stock
+    const totalLowStockMedicines = await Medicine.countDocuments({
+      $expr: {
+        $and: [
+          { $gt: ["$stock", 0] },
+          { $lte: ["$stock", "$minimumStock"] },
+        ],
+      },
+    });
 
-    const totalActiveMedicines = medicines.filter(
-      (medicine) => medicine.isActive === true
-    ).length;
+    // Out of stock
+    const totalOutOfStockMedicines = await Medicine.countDocuments({
+      stock: 0,
+    });
+
+    // Active medicines
+    const totalActiveMedicines = await Medicine.countDocuments({
+      isActive: true,
+    });
+
+    const totalPages = Math.ceil(totalMedicines / limit);
 
     return res.status(200).json({
       success: true,
+
       medicines,
+
+      pagination: {
+        currentPage: page,
+        limit,
+        totalMedicines,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+
       totalMedicines,
       totalLowStockMedicines,
       totalOutOfStockMedicines,

@@ -1,19 +1,22 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
+
 import Sidebar from "../components/global/Sidebar";
 import Header from "../components/global/Header";
 
 function DashboardLayout() {
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
+      {/* Main Area */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header */}
         <Header />
 
-        <main className="p-6">
+        {/* Scrollable Content */}
+        <main className="min-h-0 flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

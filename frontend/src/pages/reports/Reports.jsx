@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 
-import { Reportheader } from "../../components/reports/Reportheader";
+import { Reportheader } from "../../components/Reports/ReportHeader";
 import Card from "../../components/ui/Card";
 
-import { getReportSummary } from "../../api/Reports";
+import { getReportSummary } from "../../api/reports";
 
 const DEFAULT_SUMMARY = {
   totalSales: 0,

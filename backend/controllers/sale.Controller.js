@@ -274,17 +274,37 @@ const getLatestInvoiceForResponse = async () => {
   return sale?.invoiceNumber;
 };
 
+
 export const getSales = async (req, res) => {
   try {
-    const { search, hostelNumber, roomNumber, period, startDate, endDate } =
-      req.query;
+    const {
+      search,
+      hostelNumber,
+      roomNumber,
+      period,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     const filter = {};
 
-    if (hostelNumber !== undefined) {
+    const parsedPage = Math.max(Number(page) || 1, 1);
+    const parsedLimit = Math.min(
+      Math.max(Number(limit) || 10, 1),
+      100
+    );
+
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    if (hostelNumber !== undefined && hostelNumber !== "") {
       const parsedHostelNumber = Number(hostelNumber);
 
-      if (!Number.isInteger(parsedHostelNumber) || parsedHostelNumber < 1) {
+      if (
+        !Number.isInteger(parsedHostelNumber) ||
+        parsedHostelNumber < 1
+      ) {
         return res.status(400).json({
           success: false,
           message: "Invalid hostel number",
@@ -299,34 +319,39 @@ export const getSales = async (req, res) => {
     }
 
     if (search?.trim()) {
-      filter["items.medicineName"] = {
+      filter.name = {
         $regex: search.trim(),
         $options: "i",
       };
     }
 
-    const now = new Date();
-
     if (period) {
-      let days;
+      const start = new Date();
+      const end = new Date();
 
-      if (period === "7days") {
-        days = 7;
+      if (period === "today") {
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+      } else if (period === "7days") {
+        start.setDate(start.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+
+        end.setHours(23, 59, 59, 999);
       } else if (period === "28days") {
-        days = 28;
+        start.setDate(start.getDate() - 27);
+        start.setHours(0, 0, 0, 0);
+
+        end.setHours(23, 59, 59, 999);
       } else {
         return res.status(400).json({
           success: false,
-          message: "Invalid period. Use 7days or 28days",
+          message: "Invalid period. Use today, 7days or 28days",
         });
       }
 
-      const start = new Date(now);
-      start.setDate(start.getDate() - days);
-
-      filter.createdAt = {
+      filter.date = {
         $gte: start,
-        $lte: now,
+        $lte: end,
       };
     }
 
@@ -359,14 +384,28 @@ export const getSales = async (req, res) => {
         dateFilter.$lte = end;
       }
 
-      filter.createdAt = dateFilter;
+      filter.date = dateFilter;
     }
 
-    const sales = await Sale.find(filter).sort({ createdAt: -1 }).lean();
+    const [sales, total] = await Promise.all([
+      Sale.find(filter)
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean(),
+
+      Sale.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / parsedLimit);
 
     return res.status(200).json({
       success: true,
       count: sales.length,
+      total,
+      page: parsedPage,
+      limit: parsedLimit,
+      totalPages,
       sales,
     });
   } catch (error) {

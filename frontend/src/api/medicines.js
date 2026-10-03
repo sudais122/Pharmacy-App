@@ -16,26 +16,33 @@ const getAccessToken = () => {
   return localStorage.getItem("accessToken");
 };
 
-export const getMedicines = async () => {
+export const getMedicines = async (
+  page = 1,
+  limit = 15
+) => {
   const token = getAccessToken();
 
-  const response = await fetch(API_URL, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
-  });
+  const response = await fetch(
+    `${API_URL}?page=${page}&limit=${limit}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    }
+  );
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch medicines");
+    throw new Error(
+      data.message || "Failed to fetch medicines"
+    );
   }
 
   return data;
 };
-
 // Get medicine by ID
 export const getMedicineById = async (id) => {
   const response = await fetch(`${API_BASE_URL}/medicines/${id}`, {

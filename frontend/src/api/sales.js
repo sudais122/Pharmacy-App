@@ -28,16 +28,57 @@ export const createSale = async (saleData) => {
 };
 
 // Get all sales
-export const getSales = async () => {
+export const getSales = async ({
+  page = 1,
+  limit = 10,
+  search = "",
+  hostelNumber = "",
+  roomNumber = "",
+  period = "",
+  startDate = "",
+  endDate = "",
+} = {}) => {
   const token = getAccessToken();
 
-  const response = await fetch(`${API_URL}/getallsales`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
-  });
+  const params = new URLSearchParams();
+
+  params.append("page", page);
+  params.append("limit", limit);
+
+  if (search.trim()) {
+    params.append("search", search.trim());
+  }
+
+  if (hostelNumber !== "") {
+    params.append("hostelNumber", hostelNumber);
+  }
+
+  if (roomNumber.trim()) {
+    params.append("roomNumber", roomNumber.trim());
+  }
+
+  if (period) {
+    params.append("period", period);
+  }
+
+  if (startDate) {
+    params.append("startDate", startDate);
+  }
+
+  if (endDate) {
+    params.append("endDate", endDate);
+  }
+
+  const response = await fetch(
+    `${API_URL}/getallsales?${params.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    }
+  );
 
   const data = await response.json();
 

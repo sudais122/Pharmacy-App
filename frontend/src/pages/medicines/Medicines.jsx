@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import MedicineHeader from "../../components/medicines/Medicinesheader";
-
 import MedicineTable from "../../components/medicines/MedincinesTable";
-
 import EditMedicine from "../../components/medicines/EditMedicine";
-
 import AddMedicine from "../../components/medicines/AddMedicine";
 
 import { getMedicines, deleteMedicine } from "../../api/medicines";
@@ -19,10 +16,17 @@ const Medicine = () => {
 
   const [error, setError] = useState("");
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [pagination, setPagination] = useState(null);
+
   // Summary values from API
   const [totalMedicines, setTotalMedicines] = useState(0);
-  const [totalLowStockMedicines, setTotalLowStockMedicines] = useState(0);
-  const [totalOutOfStockMedicines, setTotalOutOfStockMedicines] = useState(0);
+  const [totalLowStockMedicines, setTotalLowStockMedicines] =
+    useState(0);
+  const [totalOutOfStockMedicines, setTotalOutOfStockMedicines] =
+    useState(0);
 
   // Medicine currently being edited
   const [editingMedicine, setEditingMedicine] = useState(null);
@@ -39,7 +43,7 @@ const Medicine = () => {
       setLoading(true);
       setError("");
 
-      const response = await getMedicines();
+      const response = await getMedicines(page, limit);
 
       console.log("Medicines API response:", response);
 
@@ -54,7 +58,14 @@ const Medicine = () => {
         setMedicines([]);
       }
 
-      // Summary values returned by API
+      // Pagination
+      if (response.pagination) {
+        setPagination(response.pagination);
+      } else {
+        setPagination(null);
+      }
+
+      // Summary values
       setTotalMedicines(
         Number(response.totalMedicines || 0)
       );
@@ -69,9 +80,13 @@ const Medicine = () => {
     } catch (error) {
       console.error("Fetch medicines error:", error);
 
-      setError(error.message || "Failed to load medicines");
+      setError(
+        error.message || "Failed to load medicines"
+      );
 
       setMedicines([]);
+      setPagination(null);
+
       setTotalMedicines(0);
       setTotalLowStockMedicines(0);
       setTotalOutOfStockMedicines(0);
@@ -80,10 +95,10 @@ const Medicine = () => {
     }
   };
 
-  // Fetch medicines when page loads
+  // Fetch whenever page changes
   useEffect(() => {
     fetchMedicines();
-  }, []);
+  }, [page]);
 
   // --------------------------------------------------
   // SEARCH
@@ -98,13 +113,51 @@ const Medicine = () => {
 
     return medicines.filter((medicine) => {
       return (
-        medicine.name?.toLowerCase().includes(searchText) ||
-        medicine.genericName?.toLowerCase().includes(searchText) ||
-        medicine.manufacturer?.toLowerCase().includes(searchText) ||
-        medicine.category?.toLowerCase().includes(searchText)
+        medicine.name
+          ?.toLowerCase()
+          .includes(searchText) ||
+        medicine.genericName
+          ?.toLowerCase()
+          .includes(searchText) ||
+        medicine.manufacturer
+          ?.toLowerCase()
+          .includes(searchText) ||
+        medicine.category
+          ?.toLowerCase()
+          .includes(searchText)
       );
     });
   }, [medicines, search]);
+
+  // --------------------------------------------------
+  // SEARCH CHANGE
+  // --------------------------------------------------
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+
+    // Go back to page 1 when searching
+    setPage(1);
+  };
+
+  // --------------------------------------------------
+  // PAGE CHANGE
+  // --------------------------------------------------
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1) {
+      return;
+    }
+
+    if (
+      pagination &&
+      newPage > pagination.totalPages
+    ) {
+      return;
+    }
+
+    setPage(newPage);
+  };
 
   // --------------------------------------------------
   // EDIT MEDICINE
@@ -129,7 +182,7 @@ const Medicine = () => {
 
     setEditingMedicine(null);
 
-    // Refresh API summary values
+    // Refresh current page + summary
     fetchMedicines();
   };
 
@@ -149,19 +202,21 @@ const Medicine = () => {
     try {
       await deleteMedicine(medicine._id);
 
-      // Remove medicine from UI
+      // Remove from current UI
       setMedicines((previousMedicines) =>
         previousMedicines.filter(
           (item) => item._id !== medicine._id
         )
       );
 
-      // Refresh totals from API
+      // Refresh current page + totals
       fetchMedicines();
     } catch (error) {
       console.error("Delete medicine error:", error);
 
-      alert(error.message || "Failed to delete medicine");
+      alert(
+        error.message || "Failed to delete medicine"
+      );
     }
   };
 
@@ -170,14 +225,10 @@ const Medicine = () => {
   // --------------------------------------------------
 
   const handleMedicineCreated = (newMedicine) => {
-    setMedicines((previousMedicines) => [
-      newMedicine,
-      ...previousMedicines,
-    ]);
-
     setShowAddMedicine(false);
 
-    // Refresh totals from API
+    // Refresh API instead of manually adding it to the
+    // current paginated page
     fetchMedicines();
   };
 
@@ -192,10 +243,14 @@ const Medicine = () => {
         <MedicineHeader
           totalMedicines={totalMedicines}
           lowStockMedicines={totalLowStockMedicines}
-          outOfStockMedicines={totalOutOfStockMedicines}
+          outOfStockMedicines={
+            totalOutOfStockMedicines
+          }
           searchValue={search}
-          onSearchChange={(e) => setSearch(e.target.value)}
-          onAddMedicine={() => setShowAddMedicine(true)}
+          onSearchChange={handleSearchChange}
+          onAddMedicine={() =>
+            setShowAddMedicine(true)
+          }
         />
 
         {/* Loading */}
@@ -228,6 +283,8 @@ const Medicine = () => {
         {!loading && !error && (
           <MedicineTable
             medicines={filteredMedicines}
+            pagination={pagination}
+            onPageChange={handlePageChange}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -236,7 +293,9 @@ const Medicine = () => {
         {/* Add Medicine Modal */}
         {showAddMedicine && (
           <AddMedicine
-            onClose={() => setShowAddMedicine(false)}
+            onClose={() =>
+              setShowAddMedicine(false)
+            }
             onCreated={handleMedicineCreated}
           />
         )}
@@ -245,7 +304,9 @@ const Medicine = () => {
         {editingMedicine && (
           <EditMedicine
             medicine={editingMedicine}
-            onClose={() => setEditingMedicine(null)}
+            onClose={() =>
+              setEditingMedicine(null)
+            }
             onUpdated={handleMedicineUpdated}
           />
         )}
